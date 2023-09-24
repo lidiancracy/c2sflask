@@ -23,6 +23,8 @@ if __name__ == '__main__':
     parser.add_argument('--predict', action='store_true')
     parser.add_argument('--debug', action='store_true')
     parser.add_argument('--seed', type=int, default=239)
+   
+    
     args = parser.parse_args()
 
     np.random.seed(args.seed)
@@ -44,6 +46,7 @@ if __name__ == '__main__':
         print('Rouge: ', rouge)
     if args.predict:
         predictor = InteractivePredictor(config, model)
+        # predictor.predict()
         predictor.predict()
     if args.release and args.load_path:
         model.evaluate(release=True)
