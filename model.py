@@ -1,6 +1,8 @@
+from config import Config
 import _pickle as pickle
 import os
 import time
+
 
 import numpy as np
 import shutil
@@ -137,13 +139,30 @@ class Model:
         elapsed = int(time.time() - start_time)
         print("Training time: %sh%sm%ss\n" % ((elapsed // 60 // 60), (elapsed // 60) % 60, elapsed % 60))
 
-    def trace(self, sum_loss, batch_num, multi_batch_start_time):
-        multi_batch_elapsed = time.time() - multi_batch_start_time
-        avg_loss = sum_loss / self.num_batches_to_log
-        print('Average loss at batch %d: %f, \tthroughput: %d samples/sec' % (batch_num, avg_loss,
-                                                                              self.config.BATCH_SIZE * self.num_batches_to_log / (
-                                                                                  multi_batch_elapsed if multi_batch_elapsed > 0 else 1)))
 
+
+
+    # def trace(self, sum_loss, batch_num, multi_batch_start_time):
+    #     multi_batch_elapsed = time.time() - multi_batch_start_time
+    #     avg_loss = sum_loss / self.num_batches_to_log
+    #     print('Average loss at batch %d: %f, \tthroughput: %d samples/sec' % (batch_num, avg_loss,
+    #                                                                           self.config.BATCH_SIZE * self.num_batches_to_log / (
+    #                                                                               multi_batch_elapsed if multi_batch_elapsed > 0 else 1)))
+    def trace(self, sum_loss, batch_num, multi_batch_start_time):
+        end_time = time.time()
+        multi_batch_elapsed = end_time - multi_batch_start_time
+        avg_loss = sum_loss / self.num_batches_to_log
+        
+        # 格式化开始和结束时间
+        formatted_start_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(multi_batch_start_time))
+        formatted_end_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(end_time))
+        
+        print('Start time: %s, End time: %s, Average loss at batch %d: %f, \tthroughput: %d samples/sec, \tmulti_batch_elapsed: %f seconds' % (
+            formatted_start_time, formatted_end_time, batch_num, avg_loss,
+            self.config.BATCH_SIZE * self.num_batches_to_log / (
+                multi_batch_elapsed if multi_batch_elapsed > 0 else 1),
+            multi_batch_elapsed))
+            
     def evaluate(self, release=False):
         eval_start_time = time.time()
         if self.eval_queue is None:
@@ -155,7 +174,7 @@ class Model:
             self.eval_predicted_indices_op, self.eval_topk_values, _, _ = \
                 self.build_test_graph(reader_output)
             self.eval_true_target_strings_op = reader_output[reader.TARGET_STRING_KEY]
-            self.saver = tf.train.Saver(max_to_keep=10)
+            self.saver = tf.train.Saver(max_to_keep=None)
 
         if self.config.LOAD_PATH and not self.config.TRAIN_PATH:
             self.initialize_session_variables(self.sess)
@@ -398,7 +417,7 @@ class Model:
                 optimizer = tf.train.AdamOptimizer()
                 train_op = optimizer.apply_gradients(zip(clipped_gradients, params))
 
-            self.saver = tf.train.Saver(max_to_keep=10)
+            self.saver = tf.train.Saver(max_to_keep=None)
 
         return train_op, loss
 
